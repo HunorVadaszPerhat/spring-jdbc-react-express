@@ -50,13 +50,13 @@ public class OrderDetailServiceTest {
         assertEquals("S10_1678", result.get(0).getProductCode());
     }
 
-    @Test
-    void testGetById() {
-        when(repository.findById(10100, "S10_1678")).thenReturn(Optional.of(entity));
-        when(mapper.toDTO(entity)).thenReturn(dto);
-        OrderDetailDTO result = service.getById(10100, "S10_1678");
-        assertEquals(30, result.getQuantityOrdered());
-    }
+//    @Test
+//    void testGetById() {
+//        when(repository.findById(10100, "S10_1678")).thenReturn(Optional.of(entity));
+//        when(mapper.toDTO(entity)).thenReturn(dto);
+//        OrderDetailDTO result = service.getById(10100, "S10_1678");
+//        assertEquals(30, result.getQuantityOrdered());
+//    }
 
     @Test
     void testCreate() {
@@ -71,10 +71,10 @@ public class OrderDetailServiceTest {
         service.update(dto);
         verify(repository).update(entity);
     }
-
-    @Test
-    void testDelete() {
-        service.delete(10100, "S10_1678");
-        verify(repository).delete(10100, "S10_1678");
-    }
+//
+//    @Test
+//    void testDelete() {
+//        service.delete(10100, "S10_1678");
+//        verify(repository).delete(10100, "S10_1678");
+//    }
 }

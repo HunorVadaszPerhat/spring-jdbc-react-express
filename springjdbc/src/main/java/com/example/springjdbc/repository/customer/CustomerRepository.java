@@ -5,7 +5,9 @@ import com.example.springjdbc.mapper.customer.CustomerRowMapper;
 import com.example.springjdbc.model.customer.Customer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -145,6 +147,25 @@ public class CustomerRepository {
             ps.setString(11, c.getCountry());
             ps.setObject(12, c.getSalesRepEmployeeNumber());
             ps.setBigDecimal(13, c.getCreditLimit());
+        }
+    }
+
+
+    public long countAllCustomers() {
+        String sql = "SELECT COUNT(*) FROM customers";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            if (rs.next()) {
+                return rs.getLong(1);
+            } else {
+                throw new RepositoryException("Failed to count customers: No result returned");
+            }
+
+        } catch (SQLException e) {
+            log.error("Failed to count customers", e);
+            throw new RepositoryException("Failed to count customers", e);
         }
     }
 }

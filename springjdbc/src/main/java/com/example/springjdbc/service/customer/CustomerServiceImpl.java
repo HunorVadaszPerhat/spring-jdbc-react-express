@@ -8,6 +8,10 @@ import com.example.springjdbc.repository.customer.CustomerRepository;
 import com.example.springjdbc.util.AbstractCrudService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,22 +27,45 @@ public class CustomerServiceImpl extends AbstractCrudService<CustomerDTO, Custom
 
     private final CustomerRepository repository;
     private final CustomerMapper mapper;
+    private final CustomerStatsService statsService;
 
-    public CustomerServiceImpl(CustomerRepository repository, CustomerMapper mapper) {
+    public CustomerServiceImpl(CustomerRepository repository,
+                               CustomerMapper mapper,
+                               CustomerStatsService statsService
+                               ) {
         this.repository = repository;
         this.mapper = mapper;
+        this.statsService = statsService;
     }
 
     // === Custom Paginated Method ===
+//    @Override
+//    @Transactional(readOnly = true)
+//    public List<CustomerDTO> getAllCustomers(int page, int size) {
+//        int offset = page * size;
+//        log.debug("Fetching customers with page={}, size={}, offset={}", page, size, offset);
+//        return repository.findAllCustomers(offset, size).stream()
+//                .map(mapper::toDTO)
+//                .collect(Collectors.toList());
+//    }
+
+
     @Override
     @Transactional(readOnly = true)
-    public List<CustomerDTO> getAllCustomers(int page, int size) {
+    public Page<CustomerDTO> getAllCustomers(int page, int size) {
         int offset = page * size;
         log.debug("Fetching customers with page={}, size={}, offset={}", page, size, offset);
-        return repository.findAllCustomers(offset, size).stream()
+
+        List<CustomerDTO> customers = repository.findAllCustomers(offset, size).stream()
                 .map(mapper::toDTO)
-                .collect(Collectors.toList());
+                .toList();
+
+        // ✅ Call service method that has @Cacheable
+        long total = statsService.countAllCustomers();// not repository directly
+
+        return new PageImpl<>(customers, PageRequest.of(page, size), total);
     }
+
 
     // === Inherited from Abstract ===
     @Override protected List<Customer> findAllEntities() {

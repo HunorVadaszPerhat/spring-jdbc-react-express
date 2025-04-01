@@ -1,15 +1,13 @@
 import './App.css'
-import TodoList from '../components/customers/TodoList'
-import CustomersList from '../components/customers/CustomersList'
+import CustomersTable from './components/customers/CustomersTable'
+import { Toaster } from 'react-hot-toast'
 
 function App() {
-
-
   return (
     <>
-      <h1>Todos</h1>
-      <TodoList />
-      <CustomersList />
+      <Toaster position="top-right" />
+      <CustomersTable/>
+      
     </>
   )
 }

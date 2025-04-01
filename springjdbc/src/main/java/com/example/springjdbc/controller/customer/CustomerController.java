@@ -8,8 +8,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.web.PagedResourcesAssembler;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.PagedModel;
 import org.springframework.hateoas.server.RepresentationModelAssembler;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,6 +23,10 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/customers")
+@CrossOrigin(
+        origins = "http://localhost:5173",
+        allowCredentials = "true" // ✅ allow cookies/credentials
+)
 @Tag(name = "Customer API", description = "Operations related to customer management")
 public class CustomerController {
 
@@ -29,7 +36,8 @@ public class CustomerController {
     private final CustomerModelAssembler assembler;
 
     public CustomerController(CustomerService service,
-                              CustomerModelAssembler assembler) {
+                              CustomerModelAssembler assembler
+                              ) {
         this.service = service;
         this.assembler = assembler;
     }
@@ -40,20 +48,49 @@ public class CustomerController {
         return ResponseEntity.ok(List.of());
     }
 
+//    @Operation(summary = "Get paginated list of customers")
+//    @GetMapping
+//    public ResponseEntity<CollectionModel<EntityModel<CustomerDTO>>> getAll(
+//            @RequestParam(defaultValue = "0") int page,
+//            @RequestParam(defaultValue = "10") int size) {
+//
+//        log.info("Fetching all customers with page={}, size={}", page, size);
+//        List<CustomerDTO> customers = service.getAllCustomers(page, size); // Custom paginated logic
+//        List<EntityModel<CustomerDTO>> customerModels = customers.stream()
+//                .map(assembler::toModel)
+//                .toList();
+//
+//        return ResponseEntity.ok(CollectionModel.of(customerModels,
+//                linkTo(methodOn(CustomerController.class).getAll(page, size)).withSelfRel()));
+//    }
+
     @Operation(summary = "Get paginated list of customers")
     @GetMapping
-    public ResponseEntity<CollectionModel<EntityModel<CustomerDTO>>> getAll(
+    public ResponseEntity<PagedModel<EntityModel<CustomerDTO>>> getAll(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") int size,
+            PagedResourcesAssembler<CustomerDTO> pagedResourcesAssembler
+            ) {
 
         log.info("Fetching all customers with page={}, size={}", page, size);
-        List<CustomerDTO> customers = service.getAllCustomers(page, size); // Custom paginated logic
-        List<EntityModel<CustomerDTO>> customerModels = customers.stream()
-                .map(assembler::toModel)
-                .toList();
 
-        return ResponseEntity.ok(CollectionModel.of(customerModels,
-                linkTo(methodOn(CustomerController.class).getAll(page, size)).withSelfRel()));
+        Page<CustomerDTO> customerPage = service.getAllCustomers(page, size);
+
+        PagedModel<EntityModel<CustomerDTO>> pagedModel =
+                pagedResourcesAssembler.toModel(customerPage, assembler);
+
+        return ResponseEntity.ok(pagedModel);
+    }
+
+    /**
+     * ⚠️ Used only for Spring HATEOAS link building via methodOn().
+     * Do not call this method directly.
+     * You use methodOn(...) to build links
+     * Your real controller method has parameters that are not part of the URI (like PagedResourcesAssembler or Principal)
+     * You want to avoid bloating your real endpoint signature just to satisfy HATEOAS mechanics
+     */
+    public ResponseEntity<PagedModel<EntityModel<CustomerDTO>>> getAll(int page, int size) {
+        throw new UnsupportedOperationException("This method is only for HATEOAS link generation.");
     }
 
     @Operation(summary = "Get a customer by ID")
